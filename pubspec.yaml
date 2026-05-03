@@ -1,0 +1,27 @@
+name: measured_card_table
+description: A Flutter widget for responsive card-based tables with consistently measured cell widths.
+version: 0.0.1
+homepage: https://raidbuilder.app
+repository: https://github.com/nitroplr/measured_card_table
+issue_tracker: https://github.com/nitroplr/measured_card_table/issues
+topics:
+  - flutter
+  - table
+  - responsive
+  - layout
+  - cards
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  lints: ^6.0.0
+
+flutter:
