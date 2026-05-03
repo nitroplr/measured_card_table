@@ -1,22 +1,20 @@
 import 'package:flutter/widgets.dart';
 
-/// Describes one logical column in a measured card table.
+/// Defines one column displayed by a measured card table.
 class CardTableColumn<T> {
-  /// Stable unique identifier for this column.
-  ///
-  /// Width measurements are stored by this value. Keep it stable across rebuilds.
+  /// Unique, stable identifier used to store this column's measured width.
   final String id;
 
-  /// Width used before the column has been measured.
+  /// Width used until this column has been measured.
   final double fallbackWidth;
 
-  /// Alignment for the visible cell content.
+  /// Alignment applied inside the measured cell width.
   final AlignmentGeometry alignment;
 
-  /// Builds the cell widget for a row value.
+  /// Builds this column's cell for the provided row.
   final Widget Function(BuildContext context, T row) builder;
 
-  /// Creates a card table column.
+  /// Creates a measured card table column.
   const CardTableColumn({
     required this.id,
     required this.fallbackWidth,

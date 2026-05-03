@@ -5,10 +5,10 @@ import 'package:flutter/widgets.dart';
 import 'card_table_column.dart';
 import 'card_table_controller.dart';
 
-/// Builds responsive card rows whose cells share measured column widths.
+/// Displays rows as custom cards with consistently measured cell widths.
 ///
-/// Each row is provided to the rowBuilder with a cells widget.
-/// Place the cells widget inside your card, panel, or custom row container.
+/// The table measures each column's content and gives matching cells the same
+/// width. Cells wrap when the available width is too small.
 class MeasuredCardTable<T> extends StatefulWidget {
   /// Rows displayed by the table.
   final List<T> rows;
