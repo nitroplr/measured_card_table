@@ -1,23 +1,125 @@
 # measured_card_table
 
-A Flutter widget for building responsive card-based tables with consistently measured cell widths.
+Responsive card-table layout widgets for Flutter with consistently measured cell widths.
 
-`MeasuredCardTable` is useful when you want table-like alignment without forcing a traditional horizontal table layout. Each row is rendered as your own card or panel, while cells wrap responsively based on the available width.
+This package is meant for UI layouts where you want the visual consistency of a table,
+but the flexibility of cards that wrap naturally on smaller screens.
+
+- render each row as your own card, panel, or custom widget
+- keep matching cells aligned across rows by sharing measured widths
+- let cells wrap into multiple runs when horizontal space is limited
+
+> If you have order cards, profile summaries, marketplace listings, or metric-heavy rows,
+> this package helps them stay visually aligned without forcing a traditional table layout.
 
 ## Features
 
-- Consistent measured widths for matching cells across rows
-- Responsive wrapping for narrow screens
-- Custom row and card builders
-- Optional external measurement controller
-- No runtime dependencies beyond Flutter
+### `MeasuredCardTable<T>`
 
-## Example
+Build responsive rows from your own data model.
+
+- generic row type
+- custom row/card builder
+- responsive wrapping with configurable spacing
+- optional `MeasuredCardTableController`
+- resets measurements when the column id set changes
+
+### `CardTableColumn<T>`
+
+Describe one logical cell/column.
+
+- stable `id` for width measurement
+- `fallbackWidth` before measurement is available
+- custom cell builder
+- configurable alignment
+
+### `MeasuredCardTableController`
+
+Share or reset measured column widths.
+
+- provide a controller manually when needed
+- call `reset()` when external content changes significantly
+- omit it when the table can manage measurements internally
+
+---
+
+## Installation
+
+Add to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  measured_card_table: ^0.0.1
+```
+
+## Quick start
 
 ```dart
-MeasuredCardTable<Order>(
-  rows: orders,
-  columns: [
+import 'package:flutter/material.dart';
+import 'package:measured_card_table/measured_card_table.dart';
+
+class Order {
+  final String seller;
+  final String price;
+
+  const Order({
+    required this.seller,
+    required this.price,
+  });
+}
+
+final orders = [
+  Order(seller: 'Aradune Trader', price: '2 Krono'),
+  Order(seller: 'Very Long Character Name Trader', price: '999,999 Platinum'),
+];
+
+class OrdersView extends StatelessWidget {
+  const OrdersView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MeasuredCardTable<Order>(
+      rows: orders,
+      columns: [
+        CardTableColumn<Order>(
+          id: 'seller',
+          fallbackWidth: 180,
+          builder: (context, order) => Text(order.seller),
+        ),
+        CardTableColumn<Order>(
+          id: 'price',
+          fallbackWidth: 140,
+          builder: (context, order) => Text(order.price),
+        ),
+      ],
+      rowBuilder: (context, order, cells) {
+        return Card(
+          child: Padding(
+            padding: EdgeInsets.all(12),
+            child: cells,
+          ),
+        );
+      },
+    );
+  }
+}
+```
+
+## Create reusable columns
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:measured_card_table/measured_card_table.dart';
+
+class Order {
+  final String seller;
+  final String price;
+
+  const Order({required this.seller, required this.price});
+}
+
+List<CardTableColumn<Order>> buildOrderColumns() {
+  return [
     CardTableColumn<Order>(
       id: 'seller',
       fallbackWidth: 180,
@@ -28,87 +130,112 @@ MeasuredCardTable<Order>(
       fallbackWidth: 140,
       builder: (context, order) => Text(order.price),
     ),
-  ],
-  rowBuilder: (context, order, cells) {
-    return Card(
-      child: Padding(
-        padding: EdgeInsets.all(12),
-        child: cells,
-      ),
-    );
-  },
-)
+  ];
+}
 ```
 
-## Usage
-
-Add the package to your `pubspec.yaml`:
-
-```yaml
-dependencies:
-  measured_card_table: ^0.0.1
-```
-
-Import it:
+## Use a controller
 
 ```dart
+import 'package:flutter/material.dart';
 import 'package:measured_card_table/measured_card_table.dart';
-```
 
-Create columns with stable ids:
+class Order {
+  final String seller;
 
-```dart
-final columns = [
-  CardTableColumn<Order>(
-    id: 'seller',
-    fallbackWidth: 180,
-    builder: (context, order) => Text(order.seller),
-  ),
-  CardTableColumn<Order>(
-    id: 'price',
-    fallbackWidth: 140,
-    builder: (context, order) => Text(order.price),
-  ),
-];
-```
+  const Order({required this.seller});
+}
 
-Use those columns in a table:
+class OrdersWithController extends StatefulWidget {
+  const OrdersWithController({super.key});
 
-```dart
-MeasuredCardTable<Order>(
-  rows: orders,
-  columns: columns,
-  rowBuilder: (context, order, cells) {
-    return Card(
-      child: Padding(
-        padding: EdgeInsets.all(12),
-        child: cells,
-      ),
+  @override
+  State<OrdersWithController> createState() => _OrdersWithControllerState();
+}
+
+class _OrdersWithControllerState extends State<OrdersWithController> {
+  final controller = MeasuredCardTableController();
+
+  final orders = const [
+    Order(seller: 'Aradune Trader'),
+    Order(seller: 'Very Long Character Name Trader'),
+  ];
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MeasuredCardTable<Order>(
+      controller: controller,
+      rows: orders,
+      columns: [
+        CardTableColumn<Order>(
+          id: 'seller',
+          fallbackWidth: 180,
+          builder: (context, order) => Text(order.seller),
+        ),
+      ],
+      rowBuilder: (context, order, cells) => Card(child: cells),
     );
-  },
-)
+  }
+
+  void resetMeasurements() {
+    controller.reset();
+  }
+}
 ```
 
-## Controller
+## Concepts
 
-You can provide a `MeasuredCardTableController` when you want to reset measurements or share measurements between compatible tables.
+**Rows**
 
-```dart
-final controller = MeasuredCardTableController();
+Each value in `rows` is passed to every column builder and to `rowBuilder`.
 
-MeasuredCardTable<Order>(
-  controller: controller,
-  rows: orders,
-  columns: columns,
-  rowBuilder: (context, order, cells) => Card(child: cells),
-);
+**Columns**
 
-// Later:
-controller.reset();
-```
+Each `CardTableColumn` represents one logical cell in every row. Use stable ids,
+such as `seller`, `price`, or `status`.
+
+**Fallback Widths**
+
+`fallbackWidth` is used before measured content widths are available. After layout,
+the table grows each column width to fit the widest measured content for that column.
+
+**Wrapping**
+
+Cells are placed in a `Wrap`, so narrow layouts naturally move cells onto additional
+runs instead of overflowing horizontally.
+
+**Controller Lifetime**
+
+If you do not pass a controller, the table creates and disposes its own controller.
+If you do pass one, you own its lifetime.
+
+## When to use this package
+
+- You want card rows with table-like alignment
+- You want responsive wrapping instead of horizontal scrolling
+- You want custom row/card layouts
+- You have repeated metric-style cells
+
+## When NOT to use this package
+
+- You need a full data table with sorting/pagination
+- You need virtualization for thousands of visible rows
+- You need strict non-wrapping grid columns
 
 ## Notes
 
-Column ids should be stable. If the set or order of column ids changes, the table resets its measured widths.
+Column ids should be stable. If the set or order changes, measurements reset.
 
-See the `example` directory for a complete Flutter app.
+For large lists, combine with your own pagination or virtualization.
+
+See the example directory for a full app.
+
+## License
+
+MIT. See LICENSE.

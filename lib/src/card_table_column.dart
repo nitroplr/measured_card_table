@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-/// Describes one logical column in a [MeasuredCardTable].
+/// Describes one logical column in a measured card table.
 class CardTableColumn<T> {
   /// Stable unique identifier for this column.
   ///

@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
-/// Stores measured column widths for a [MeasuredCardTable].
+/// Stores measured column widths for the table.
 ///
 /// A controller can be shared between tables that use the same logical columns,
 /// or omitted to let the table manage its own measurements.
@@ -11,7 +11,7 @@ class MeasuredCardTableController extends ChangeNotifier {
 
   final Map<String, double> _widths = <String, double>{};
 
-  /// Returns the measured width for [columnId], or zero if not measured yet.
+  /// Returns the measured width for the given columnId, or zero if not measured yet.
   double widthFor(String columnId) => _widths[columnId] ?? 0;
 
   /// Applies a measured [width] for [columnId].

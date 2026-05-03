@@ -7,8 +7,8 @@ import 'card_table_controller.dart';
 
 /// Builds responsive card rows whose cells share measured column widths.
 ///
-/// Each row is provided to [rowBuilder] with a `cells` widget. Place that
-/// `cells` widget inside your card, panel, or custom row container.
+/// Each row is provided to the rowBuilder with a cells widget.
+/// Place the cells widget inside your card, panel, or custom row container.
 class MeasuredCardTable<T> extends StatefulWidget {
   /// Rows displayed by the table.
   final List<T> rows;
