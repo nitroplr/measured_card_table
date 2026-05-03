@@ -28,6 +28,15 @@ class MeasuredCardTable<T> extends StatefulWidget {
   /// Vertical spacing between wrapped cell runs and between rows.
   final double rowGap;
 
+  /// How cells are aligned along each wrap run.
+  final WrapAlignment alignment;
+
+  /// How wrapped runs are aligned vertically.
+  final WrapAlignment runAlignment;
+
+  /// Cross-axis alignment for cells in each wrap run.
+  final WrapCrossAlignment crossAxisAlignment;
+
   /// Width subtracted before packing cells.
   ///
   /// This gives wrapping a little room for rounding and parent constraints.
@@ -42,6 +51,9 @@ class MeasuredCardTable<T> extends StatefulWidget {
     this.controller,
     this.gap = 12,
     this.rowGap = 8,
+    this.alignment = WrapAlignment.start,
+    this.runAlignment = WrapAlignment.start,
+    this.crossAxisAlignment = WrapCrossAlignment.start,
     this.packingSafetyBuffer = 8,
   }) : assert(gap >= 0),
        assert(rowGap >= 0),
@@ -69,10 +81,8 @@ class _MeasuredCardTableState<T> extends State<MeasuredCardTable<T>> {
   void didUpdateWidget(covariant MeasuredCardTable<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    final MeasuredCardTableController oldController =
-        oldWidget.controller ?? _localController;
-    final MeasuredCardTableController newController =
-        widget.controller ?? _localController;
+    final MeasuredCardTableController oldController = oldWidget.controller ?? _localController;
+    final MeasuredCardTableController newController = widget.controller ?? _localController;
 
     if (oldController != newController) {
       oldController.removeListener(_handleControllerChanged);
@@ -91,10 +101,7 @@ class _MeasuredCardTableState<T> extends State<MeasuredCardTable<T>> {
     super.dispose();
   }
 
-  bool _sameColumnIds(
-    List<CardTableColumn<T>> oldColumns,
-    List<CardTableColumn<T>> newColumns,
-  ) {
+  bool _sameColumnIds(List<CardTableColumn<T>> oldColumns, List<CardTableColumn<T>> newColumns) {
     if (oldColumns.length != newColumns.length) return false;
 
     for (var i = 0; i < oldColumns.length; i++) {
@@ -117,14 +124,9 @@ class _MeasuredCardTableState<T> extends State<MeasuredCardTable<T>> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final double maxWidth = constraints.hasBoundedWidth
-            ? constraints.maxWidth
-            : MediaQuery.sizeOf(context).width;
+        final double maxWidth = constraints.hasBoundedWidth ? constraints.maxWidth : MediaQuery.sizeOf(context).width;
 
-        final double availableWidth = math.max(
-          0,
-          maxWidth - widget.packingSafetyBuffer,
-        );
+        final double availableWidth = math.max(0, maxWidth - widget.packingSafetyBuffer);
 
         return Stack(
           clipBehavior: Clip.none,
@@ -143,10 +145,12 @@ class _MeasuredCardTableState<T> extends State<MeasuredCardTable<T>> {
                       availableWidth: availableWidth,
                       gap: widget.gap,
                       rowGap: widget.rowGap,
+                      alignment: widget.alignment,
+                      runAlignment: widget.runAlignment,
+                      crossAxisAlignment: widget.crossAxisAlignment,
                     ),
                   ),
-                  if (i != widget.rows.length - 1)
-                    SizedBox(height: widget.rowGap),
+                  if (i != widget.rows.length - 1) SizedBox(height: widget.rowGap),
                 ],
               ],
             ),
@@ -174,6 +178,9 @@ class _PackedCells<T> extends StatelessWidget {
   final double availableWidth;
   final double gap;
   final double rowGap;
+  final WrapAlignment alignment;
+  final WrapAlignment runAlignment;
+  final WrapCrossAlignment crossAxisAlignment;
 
   const _PackedCells({
     required this.row,
@@ -182,6 +189,9 @@ class _PackedCells<T> extends StatelessWidget {
     required this.availableWidth,
     required this.gap,
     required this.rowGap,
+    required this.alignment,
+    required this.runAlignment,
+    required this.crossAxisAlignment,
   });
 
   @override
@@ -189,16 +199,12 @@ class _PackedCells<T> extends StatelessWidget {
     return Wrap(
       spacing: gap,
       runSpacing: rowGap,
-      alignment: WrapAlignment.start,
-      crossAxisAlignment: WrapCrossAlignment.start,
+      alignment: alignment,
+      runAlignment: runAlignment,
+      crossAxisAlignment: crossAxisAlignment,
       children: [
         for (final column in columns)
-          _VisibleCell<T>(
-            row: row,
-            column: column,
-            controller: controller,
-            maxWidth: availableWidth,
-          ),
+          _VisibleCell<T>(row: row, column: column, controller: controller, maxWidth: availableWidth),
       ],
     );
   }
@@ -210,27 +216,17 @@ class _VisibleCell<T> extends StatelessWidget {
   final MeasuredCardTableController controller;
   final double maxWidth;
 
-  const _VisibleCell({
-    required this.row,
-    required this.column,
-    required this.controller,
-    required this.maxWidth,
-  });
+  const _VisibleCell({required this.row, required this.column, required this.controller, required this.maxWidth});
 
   @override
   Widget build(BuildContext context) {
     final double measuredWidth = controller.widthFor(column.id);
-    final double desiredWidth = measuredWidth > 0
-        ? measuredWidth
-        : column.fallbackWidth;
+    final double desiredWidth = measuredWidth > 0 ? measuredWidth : column.fallbackWidth;
     final double width = desiredWidth.clamp(0, maxWidth).toDouble();
 
     return SizedBox(
       width: width,
-      child: Align(
-        alignment: column.alignment,
-        child: column.builder(context, row),
-      ),
+      child: Align(alignment: column.alignment, child: column.builder(context, row)),
     );
   }
 }
