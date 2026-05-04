@@ -228,6 +228,18 @@ class _PackedCells<T> extends StatelessWidget {
                 ],
               ],
             ),
+            Positioned(
+              left: 0,
+              top: 0,
+              child: IgnorePointer(
+                child: _MeasurementLayer<T>(
+                  row: row,
+                  columns: columns,
+                  controller: controller,
+                  maxWidth: availableWidth,
+                ),
+              ),
+            ),
           ],
         );
       },
@@ -289,15 +301,7 @@ class _VisibleCell<T> extends StatelessWidget {
 
     return SizedBox(
       width: width,
-      child: Align(
-        alignment: column.alignment,
-        child: _MeasureSize(
-          onChange: (size) {
-            controller.applyMeasurement(column.id, size.width);
-          },
-          child: column.builder(context, row),
-        ),
-      ),
+      child: Align(alignment: column.alignment, child: column.builder(context, row)),
     );
   }
 }
@@ -344,5 +348,44 @@ class _RenderMeasureSize extends RenderProxyBox {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       onChange(measuredSize);
     });
+  }
+}
+
+class _MeasurementLayer<T> extends StatelessWidget {
+  final T row;
+  final List<CardTableColumn<T>> columns;
+  final MeasuredCardTableController controller;
+  final double maxWidth;
+
+  const _MeasurementLayer({required this.row, required this.columns, required this.controller, required this.maxWidth});
+
+  @override
+  Widget build(BuildContext context) {
+    return Offstage(
+      child: SizedBox(
+        width: maxWidth,
+        height: 0,
+        child: OverflowBox(
+          alignment: Alignment.topLeft,
+          minWidth: 0,
+          maxWidth: double.infinity,
+          minHeight: 0,
+          maxHeight: double.infinity,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final column in columns)
+                _MeasureSize(
+                  onChange: (size) {
+                    controller.applyMeasurement(column.id, size.width);
+                  },
+                  child: column.builder(context, row),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
