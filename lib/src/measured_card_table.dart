@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import 'card_table_column.dart';
@@ -360,34 +361,56 @@ class _MeasurementLayer<T> extends StatelessWidget {
   }
 }
 
-class _MeasureSize extends StatefulWidget {
-  final Widget child;
+class _MeasureSize extends SingleChildRenderObjectWidget {
   final ValueChanged<Size> onChange;
 
-  const _MeasureSize({required this.child, required this.onChange});
+  const _MeasureSize({
+    required this.onChange,
+    required super.child,
+  });
 
   @override
-  State<_MeasureSize> createState() => _MeasureSizeState();
+  RenderObject createRenderObject(BuildContext context) {
+    return _RenderMeasureSize(onChange);
+  }
+
+  @override
+  void updateRenderObject(
+      BuildContext context,
+      covariant _RenderMeasureSize renderObject,
+      ) {
+    renderObject.onChange = onChange;
+  }
 }
 
-class _MeasureSizeState extends State<_MeasureSize> {
-  Size? _oldSize;
+class _RenderMeasureSize extends RenderProxyBox {
+  _RenderMeasureSize(this.onChange);
+
+  ValueChanged<Size> onChange;
+  Size? _lastReportedSize;
 
   @override
-  Widget build(BuildContext context) {
+  void performLayout() {
+    super.performLayout();
+
+    final child = this.child;
+    if (child == null) return;
+
+    final Size childSize = child.size;
+
+    final double intrinsicWidth = child.getMaxIntrinsicWidth(double.infinity);
+    final double resolvedWidth = math.max(childSize.width, intrinsicWidth);
+
+    final Size measuredSize = Size(
+      resolvedWidth.ceilToDouble(),
+      childSize.height.ceilToDouble(),
+    );
+
+    if (_lastReportedSize == measuredSize) return;
+    _lastReportedSize = measuredSize;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-
-      final renderObject = context.findRenderObject();
-      if (renderObject is! RenderBox || !renderObject.hasSize) return;
-
-      final Size size = renderObject.size;
-      if (_oldSize == size) return;
-
-      _oldSize = size;
-      widget.onChange(size);
+      onChange(measuredSize);
     });
-
-    return widget.child;
   }
 }
