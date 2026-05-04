@@ -139,55 +139,28 @@ class _MeasuredCardTableState<T> extends State<MeasuredCardTable<T>> {
       return const SizedBox.shrink();
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final double maxWidth = constraints.hasBoundedWidth ? constraints.maxWidth : MediaQuery.sizeOf(context).width;
-
-        final double measurementWidth = _safeAvailableWidth(maxWidth);
-
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (var i = 0; i < widget.rows.length; i++) ...[
-                  widget.rowBuilder(
-                    context,
-                    widget.rows[i],
-                    _PackedCells<T>(
-                      row: widget.rows[i],
-                      columns: widget.columns,
-                      controller: _controller,
-                      gap: widget.gap,
-                      rowGap: widget.rowGap,
-                      mainAxisAlignment: widget.mainAxisAlignment,
-                      crossAxisAlignment: widget.crossAxisAlignment,
-                      packingSafetyBuffer: widget.packingSafetyBuffer,
-                    ),
-                  ),
-                  if (i != widget.rows.length - 1) SizedBox(height: widget.rowGap),
-                ],
-              ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < widget.rows.length; i++) ...[
+          widget.rowBuilder(
+            context,
+            widget.rows[i],
+            _PackedCells<T>(
+              row: widget.rows[i],
+              columns: widget.columns,
+              controller: _controller,
+              gap: widget.gap,
+              rowGap: widget.rowGap,
+              mainAxisAlignment: widget.mainAxisAlignment,
+              crossAxisAlignment: widget.crossAxisAlignment,
+              packingSafetyBuffer: widget.packingSafetyBuffer,
             ),
-            Positioned(
-              left: 0,
-              top: 0,
-              child: _MeasurementLayer<T>(
-                rows: widget.rows,
-                columns: widget.columns,
-                controller: _controller,
-                maxWidth: measurementWidth,
-              ),
-            ),
-          ],
-        );
-      },
+          ),
+          if (i != widget.rows.length - 1) SizedBox(height: widget.rowGap),
+        ],
+      ],
     );
-  }
-
-  double _safeAvailableWidth(double maxWidth) {
-    return math.max(0, maxWidth - widget.packingSafetyBuffer).floorToDouble();
   }
 }
 
@@ -229,27 +202,37 @@ class _PackedCells<T> extends StatelessWidget {
         final double availableWidth = _safeAvailableWidth(maxWidth);
         final List<List<CardTableColumn<T>>> packedRows = _packColumns(availableWidth);
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        return Stack(
+          clipBehavior: Clip.none,
           children: [
-            for (var i = 0; i < packedRows.length; i++) ...[
-              Row(
-                mainAxisAlignment: mainAxisAlignment,
-                crossAxisAlignment: crossAxisAlignment,
-                children: [
-                  for (var j = 0; j < packedRows[i].length; j++) ...[
-                    _VisibleCell<T>(
-                      row: row,
-                      column: packedRows[i][j],
-                      controller: controller,
-                      maxWidth: availableWidth,
-                    ),
-                    if (_usesFixedGap && j != packedRows[i].length - 1) SizedBox(width: gap),
-                  ],
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < packedRows.length; i++) ...[
+                  Row(
+                    mainAxisAlignment: mainAxisAlignment,
+                    crossAxisAlignment: crossAxisAlignment,
+                    children: [
+                      for (var j = 0; j < packedRows[i].length; j++) ...[
+                        _VisibleCell<T>(
+                          row: row,
+                          column: packedRows[i][j],
+                          controller: controller,
+                          maxWidth: availableWidth,
+                        ),
+                        if (_usesFixedGap && j != packedRows[i].length - 1) SizedBox(width: gap),
+                      ],
+                    ],
+                  ),
+                  if (i != packedRows.length - 1) SizedBox(height: rowGap),
                 ],
-              ),
-              if (i != packedRows.length - 1) SizedBox(height: rowGap),
-            ],
+              ],
+            ),
+            Positioned(
+              left: 0,
+              top: 0,
+              child: _MeasurementLayer<T>(row: row, columns: columns, controller: controller, maxWidth: availableWidth),
+            ),
           ],
         );
       },
@@ -317,17 +300,12 @@ class _VisibleCell<T> extends StatelessWidget {
 }
 
 class _MeasurementLayer<T> extends StatelessWidget {
-  final List<T> rows;
+  final T row;
   final List<CardTableColumn<T>> columns;
   final MeasuredCardTableController controller;
   final double maxWidth;
 
-  const _MeasurementLayer({
-    required this.rows,
-    required this.columns,
-    required this.controller,
-    required this.maxWidth,
-  });
+  const _MeasurementLayer({required this.row, required this.columns, required this.controller, required this.maxWidth});
 
   @override
   Widget build(BuildContext context) {
@@ -346,13 +324,12 @@ class _MeasurementLayer<T> extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               for (final column in columns)
-                for (final row in rows)
-                  _MeasureSize(
-                    onChange: (size) {
-                      controller.applyMeasurement(column.id, size.width);
-                    },
-                    child: column.builder(context, row),
-                  ),
+                _MeasureSize(
+                  onChange: (size) {
+                    controller.applyMeasurement(column.id, size.width);
+                  },
+                  child: column.builder(context, row),
+                ),
             ],
           ),
         ),
@@ -364,10 +341,7 @@ class _MeasurementLayer<T> extends StatelessWidget {
 class _MeasureSize extends SingleChildRenderObjectWidget {
   final ValueChanged<Size> onChange;
 
-  const _MeasureSize({
-    required this.onChange,
-    required super.child,
-  });
+  const _MeasureSize({required this.onChange, required super.child});
 
   @override
   RenderObject createRenderObject(BuildContext context) {
@@ -375,10 +349,7 @@ class _MeasureSize extends SingleChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(
-      BuildContext context,
-      covariant _RenderMeasureSize renderObject,
-      ) {
+  void updateRenderObject(BuildContext context, covariant _RenderMeasureSize renderObject) {
     renderObject.onChange = onChange;
   }
 }
@@ -401,10 +372,7 @@ class _RenderMeasureSize extends RenderProxyBox {
     final double intrinsicWidth = child.getMaxIntrinsicWidth(double.infinity);
     final double resolvedWidth = math.max(childSize.width, intrinsicWidth);
 
-    final Size measuredSize = Size(
-      resolvedWidth.ceilToDouble(),
-      childSize.height.ceilToDouble(),
-    );
+    final Size measuredSize = Size(resolvedWidth.ceilToDouble(), childSize.height.ceilToDouble());
 
     if (_lastReportedSize == measuredSize) return;
     _lastReportedSize = measuredSize;
