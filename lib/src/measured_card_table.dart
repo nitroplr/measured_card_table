@@ -331,22 +331,29 @@ class _MeasurementLayer<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Offstage(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final column in columns)
-              for (final row in rows)
-                IntrinsicWidth(
-                  child: _MeasureSize(
+      child: SizedBox(
+        width: maxWidth,
+        height: 0,
+        child: OverflowBox(
+          alignment: Alignment.topLeft,
+          minWidth: 0,
+          maxWidth: double.infinity,
+          minHeight: 0,
+          maxHeight: double.infinity,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final column in columns)
+                for (final row in rows)
+                  _MeasureSize(
                     onChange: (size) {
                       controller.applyMeasurement(column.id, size.width);
                     },
                     child: column.builder(context, row),
                   ),
-                ),
-          ],
+            ],
+          ),
         ),
       ),
     );
