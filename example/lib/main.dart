@@ -21,7 +21,7 @@ class ExampleApp extends StatelessWidget {
       home: ExampleShell(
         child: MeasuredCardTable<ExampleOrder>(
           rows: exampleOrders,
-          gap: 12,
+          gap: 0,
           rowGap: 12,
           columns: [
             CardTableColumn(
@@ -93,7 +93,7 @@ Widget _orderCard(BuildContext context, ExampleOrder row, Widget cells) {
       ),
     ),
     child: Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.zero,
       child: cells,
     ),
   );

@@ -8,7 +8,8 @@ import 'card_table_controller.dart';
 /// Displays rows as custom cards with consistently measured cell widths.
 ///
 /// The table measures each column's content and gives matching cells the same
-/// width. Cells wrap when the available width is too small.
+/// width. Cells are packed into explicit horizontal rows instead of using
+/// [Wrap], so layout is predictable and avoids repeated wrap calculations.
 class MeasuredCardTable<T> extends StatefulWidget {
   /// Rows displayed by the table.
   final List<T> rows;
@@ -22,24 +23,21 @@ class MeasuredCardTable<T> extends StatefulWidget {
   /// Optional external controller for sharing or resetting measurements.
   final MeasuredCardTableController? controller;
 
-  /// Horizontal spacing between cells.
+  /// Horizontal spacing between cells when using start, center, or end alignment.
   final double gap;
 
-  /// Vertical spacing between wrapped cell runs and between rows.
+  /// Vertical spacing between packed cell rows and between table rows.
   final double rowGap;
 
-  /// How cells are aligned along each wrap run.
-  final WrapAlignment alignment;
+  /// Horizontal alignment used for each packed cell row.
+  final MainAxisAlignment mainAxisAlignment;
 
-  /// How wrapped runs are aligned vertically.
-  final WrapAlignment runAlignment;
-
-  /// Cross-axis alignment for cells in each wrap run.
-  final WrapCrossAlignment crossAxisAlignment;
+  /// Cross-axis alignment for cells in each packed cell row.
+  final CrossAxisAlignment crossAxisAlignment;
 
   /// Width subtracted before packing cells.
   ///
-  /// This gives wrapping a little room for rounding and parent constraints.
+  /// This gives row packing room for rounding and parent constraints.
   final double packingSafetyBuffer;
 
   /// Creates a measured card table.
@@ -51,9 +49,8 @@ class MeasuredCardTable<T> extends StatefulWidget {
     this.controller,
     this.gap = 12,
     this.rowGap = 8,
-    this.alignment = WrapAlignment.start,
-    this.runAlignment = WrapAlignment.start,
-    this.crossAxisAlignment = WrapCrossAlignment.start,
+    this.mainAxisAlignment = MainAxisAlignment.start,
+    this.crossAxisAlignment = CrossAxisAlignment.start,
     this.packingSafetyBuffer = 8,
   }) : assert(gap >= 0),
        assert(rowGap >= 0),
@@ -73,6 +70,9 @@ class _MeasuredCardTableState<T> extends State<MeasuredCardTable<T>> {
   @override
   void initState() {
     super.initState();
+
+    _validateColumns();
+
     _localController = MeasuredCardTableController();
     _controller.addListener(_handleControllerChanged);
   }
@@ -80,6 +80,8 @@ class _MeasuredCardTableState<T> extends State<MeasuredCardTable<T>> {
   @override
   void didUpdateWidget(covariant MeasuredCardTable<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    _validateColumns();
 
     final MeasuredCardTableController oldController = oldWidget.controller ?? _localController;
     final MeasuredCardTableController newController = widget.controller ?? _localController;
@@ -98,7 +100,21 @@ class _MeasuredCardTableState<T> extends State<MeasuredCardTable<T>> {
   void dispose() {
     _controller.removeListener(_handleControllerChanged);
     _localController.dispose();
+
     super.dispose();
+  }
+
+  void _validateColumns() {
+    final ids = <String>{};
+
+    for (final column in widget.columns) {
+      if (!ids.add(column.id)) {
+        throw FlutterError(
+          'Duplicate CardTableColumn id detected: "${column.id}". '
+          'Column ids must be unique.',
+        );
+      }
+    }
   }
 
   bool _sameColumnIds(List<CardTableColumn<T>> oldColumns, List<CardTableColumn<T>> newColumns) {
@@ -126,7 +142,7 @@ class _MeasuredCardTableState<T> extends State<MeasuredCardTable<T>> {
       builder: (context, constraints) {
         final double maxWidth = constraints.hasBoundedWidth ? constraints.maxWidth : MediaQuery.sizeOf(context).width;
 
-        final double availableWidth = math.max(0, maxWidth - widget.packingSafetyBuffer);
+        final double measurementWidth = _safeAvailableWidth(maxWidth);
 
         return Stack(
           clipBehavior: Clip.none,
@@ -142,12 +158,11 @@ class _MeasuredCardTableState<T> extends State<MeasuredCardTable<T>> {
                       row: widget.rows[i],
                       columns: widget.columns,
                       controller: _controller,
-                      availableWidth: availableWidth,
                       gap: widget.gap,
                       rowGap: widget.rowGap,
-                      alignment: widget.alignment,
-                      runAlignment: widget.runAlignment,
+                      mainAxisAlignment: widget.mainAxisAlignment,
                       crossAxisAlignment: widget.crossAxisAlignment,
+                      packingSafetyBuffer: widget.packingSafetyBuffer,
                     ),
                   ),
                   if (i != widget.rows.length - 1) SizedBox(height: widget.rowGap),
@@ -161,7 +176,7 @@ class _MeasuredCardTableState<T> extends State<MeasuredCardTable<T>> {
                 rows: widget.rows,
                 columns: widget.columns,
                 controller: _controller,
-                maxWidth: availableWidth,
+                maxWidth: measurementWidth,
               ),
             ),
           ],
@@ -169,44 +184,113 @@ class _MeasuredCardTableState<T> extends State<MeasuredCardTable<T>> {
       },
     );
   }
+
+  double _safeAvailableWidth(double maxWidth) {
+    return math.max(0, maxWidth - widget.packingSafetyBuffer).floorToDouble();
+  }
 }
 
 class _PackedCells<T> extends StatelessWidget {
+  static const double _packingEpsilon = 0.001;
+
   final T row;
   final List<CardTableColumn<T>> columns;
   final MeasuredCardTableController controller;
-  final double availableWidth;
   final double gap;
   final double rowGap;
-  final WrapAlignment alignment;
-  final WrapAlignment runAlignment;
-  final WrapCrossAlignment crossAxisAlignment;
+  final MainAxisAlignment mainAxisAlignment;
+  final CrossAxisAlignment crossAxisAlignment;
+  final double packingSafetyBuffer;
 
   const _PackedCells({
     required this.row,
     required this.columns,
     required this.controller,
-    required this.availableWidth,
     required this.gap,
     required this.rowGap,
-    required this.alignment,
-    required this.runAlignment,
+    required this.mainAxisAlignment,
     required this.crossAxisAlignment,
+    required this.packingSafetyBuffer,
   });
+
+  bool get _usesFixedGap {
+    return mainAxisAlignment == MainAxisAlignment.start ||
+        mainAxisAlignment == MainAxisAlignment.end ||
+        mainAxisAlignment == MainAxisAlignment.center;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: gap,
-      runSpacing: rowGap,
-      alignment: alignment,
-      runAlignment: runAlignment,
-      crossAxisAlignment: crossAxisAlignment,
-      children: [
-        for (final column in columns)
-          _VisibleCell<T>(row: row, column: column, controller: controller, maxWidth: availableWidth),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double maxWidth = constraints.hasBoundedWidth ? constraints.maxWidth : MediaQuery.sizeOf(context).width;
+
+        final double availableWidth = _safeAvailableWidth(maxWidth);
+        final List<List<CardTableColumn<T>>> packedRows = _packColumns(availableWidth);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < packedRows.length; i++) ...[
+              Row(
+                mainAxisAlignment: mainAxisAlignment,
+                crossAxisAlignment: crossAxisAlignment,
+                children: [
+                  for (var j = 0; j < packedRows[i].length; j++) ...[
+                    _VisibleCell<T>(
+                      row: row,
+                      column: packedRows[i][j],
+                      controller: controller,
+                      maxWidth: availableWidth,
+                    ),
+                    if (_usesFixedGap && j != packedRows[i].length - 1) SizedBox(width: gap),
+                  ],
+                ],
+              ),
+              if (i != packedRows.length - 1) SizedBox(height: rowGap),
+            ],
+          ],
+        );
+      },
     );
+  }
+
+  List<List<CardTableColumn<T>>> _packColumns(double availableWidth) {
+    final List<List<CardTableColumn<T>>> packedRows = [];
+    List<CardTableColumn<T>> currentRow = [];
+    double currentWidth = 0;
+
+    for (final column in columns) {
+      final double columnWidth = _widthFor(column, availableWidth);
+      final double spacing = _usesFixedGap && currentRow.isNotEmpty ? gap : 0;
+      final double nextWidth = currentWidth + spacing + columnWidth;
+
+      if (currentRow.isNotEmpty && nextWidth > availableWidth - _packingEpsilon) {
+        packedRows.add(currentRow);
+        currentRow = [column];
+        currentWidth = columnWidth;
+      } else {
+        currentRow.add(column);
+        currentWidth = nextWidth;
+      }
+    }
+
+    if (currentRow.isNotEmpty) {
+      packedRows.add(currentRow);
+    }
+
+    return packedRows;
+  }
+
+  double _safeAvailableWidth(double maxWidth) {
+    return math.max(0, maxWidth - packingSafetyBuffer).floorToDouble();
+  }
+
+  double _widthFor(CardTableColumn<T> column, double availableWidth) {
+    final double measuredWidth = controller.widthFor(column.id);
+    final double desiredWidth = measuredWidth > 0 ? measuredWidth : column.fallbackWidth;
+
+    return desiredWidth.clamp(0, availableWidth).toDouble();
   }
 }
 

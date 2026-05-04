@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -8,6 +9,9 @@ class MeasuredCardTableController extends ChangeNotifier {
 
   final Map<String, double> _widths = <String, double>{};
 
+  bool _notificationScheduled = false;
+  bool _disposed = false;
+
   /// Returns the measured width for a column.
   ///
   /// Returns zero when the column has not been measured yet.
@@ -15,9 +19,10 @@ class MeasuredCardTableController extends ChangeNotifier {
 
   /// Stores a measured width for a column.
   ///
-  /// Widths only increase until reset is called. This prevents cells from
-  /// shrinking during rebuilds when shorter content is measured later.
+  /// Widths only increase until [reset] is called.
   void applyMeasurement(String columnId, double width) {
+    if (_disposed) return;
+
     if (columnId.isEmpty || width <= 0 || width.isNaN || width.isInfinite) {
       return;
     }
@@ -28,14 +33,33 @@ class MeasuredCardTableController extends ChangeNotifier {
     if (next <= current) return;
 
     _widths[columnId] = math.max(current, next);
-    notifyListeners();
+    _scheduleNotifyListeners();
   }
 
   /// Clears all measured widths.
   void reset() {
-    if (_widths.isEmpty) return;
+    if (_disposed || _widths.isEmpty) return;
 
     _widths.clear();
-    notifyListeners();
+    _scheduleNotifyListeners();
+  }
+
+  void _scheduleNotifyListeners() {
+    if (_notificationScheduled) return;
+
+    _notificationScheduled = true;
+
+    scheduleMicrotask(() {
+      _notificationScheduled = false;
+
+      if (_disposed) return;
+      notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }

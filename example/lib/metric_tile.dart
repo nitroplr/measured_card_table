@@ -14,7 +14,7 @@ class MetricTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       constraints: const BoxConstraints(minHeight: 62),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 0),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(16),
