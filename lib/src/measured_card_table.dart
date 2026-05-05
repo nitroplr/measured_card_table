@@ -311,7 +311,7 @@ class _PackedCellRow<T> extends StatelessWidget {
           row: row,
           column: column,
           width: _widthFor(column),
-          alignmentOverride: columns.length == 1 ? Alignment.centerLeft : null,
+          alignmentOverride: columns.length == 1 ? AlignmentDirectional.centerStart : null,
         ),
       );
 
@@ -320,9 +320,15 @@ class _PackedCellRow<T> extends StatelessWidget {
       }
     }
 
+    final resolvedMainAxisAlignment = columns.length == 1 ? MainAxisAlignment.start : mainAxisAlignment;
+
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: availableWidth),
-      child: Row(mainAxisAlignment: mainAxisAlignment, crossAxisAlignment: crossAxisAlignment, children: children),
+      child: Row(
+        mainAxisAlignment: resolvedMainAxisAlignment,
+        crossAxisAlignment: crossAxisAlignment,
+        children: children,
+      ),
     );
   }
 
@@ -338,7 +344,7 @@ class _VisibleCell<T> extends StatelessWidget {
   final T row;
   final CardTableColumn<T> column;
   final double width;
-  final Alignment? alignmentOverride;
+  final AlignmentGeometry? alignmentOverride;
 
   const _VisibleCell({required this.row, required this.column, required this.width, this.alignmentOverride});
 
