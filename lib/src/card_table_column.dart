@@ -14,7 +14,7 @@ class CardTableColumn<T> {
   /// Builds this column's cell for the provided row.
   ///
   /// Do not return [Expanded], [Flexible], or other widgets that require a
-  /// flex parent. The table controls cell width.
+  /// flex parent. The table needs to be able to measure the widget.
   final Widget Function(BuildContext context, T row) builder;
 
   /// Creates a measured card table column.

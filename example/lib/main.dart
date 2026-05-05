@@ -19,38 +19,144 @@ class ExampleApp extends StatelessWidget {
       title: 'Measured Card Table Example',
       debugShowCheckedModeBanner: false,
       home: ExampleShell(
-        child: MeasuredCardTable<ExampleOrder>(
-          rows: exampleOrders,
-          gap: 0,
-          rowGap: 12,
-          columns: [
-            CardTableColumn(
-              id: 'seller',
-              fallbackWidth: 230,
-              builder: _sellerCell,
+        child: _ResizableTableDemo(),
+      ),
+    );
+  }
+}
+
+class _ResizableTableDemo extends StatefulWidget {
+  const _ResizableTableDemo();
+
+  @override
+  State<_ResizableTableDemo> createState() => _ResizableTableDemoState();
+}
+
+class _ResizableTableDemoState extends State<_ResizableTableDemo> {
+  static const double _minWidthFactor = 0.30;
+  static const double _maxWidthFactor = 1.00;
+
+  double _widthFactor = _maxWidthFactor;
+
+  @override
+  Widget build(BuildContext context) {
+    final percent = (_widthFactor * 100).round();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth;
+        final tableWidth = availableWidth * _widthFactor;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _ResizeControls(
+              percent: percent,
+              widthFactor: _widthFactor,
+              minWidthFactor: _minWidthFactor,
+              maxWidthFactor: _maxWidthFactor,
+              onChanged: (value) {
+                setState(() => _widthFactor = value);
+              },
             ),
-            CardTableColumn(
-              id: 'server',
-              fallbackWidth: 210,
-              builder: _serverCell,
-            ),
-            CardTableColumn(
-              id: 'price',
-              fallbackWidth: 240,
-              builder: _priceCell,
-            ),
-            CardTableColumn(
-              id: 'quantity',
-              fallbackWidth: 115,
-              builder: _quantityCell,
-            ),
-            CardTableColumn(
-              id: 'status',
-              fallbackWidth: 130,
-              builder: _statusCell,
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.topCenter,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                width: tableWidth,
+                child: const MeasuredCardTable<ExampleOrder>(
+                  rows: exampleOrders,
+                  gap: 0,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  rowGap: 12,
+                  columns: [
+                    CardTableColumn(
+                      id: 'seller',
+                      fallbackWidth: 230,
+                      builder: _sellerCell,
+                    ),
+                    CardTableColumn(
+                      id: 'server',
+                      fallbackWidth: 210,
+                      builder: _serverCell,
+                    ),
+                    CardTableColumn(
+                      id: 'price',
+                      fallbackWidth: 240,
+                      builder: _priceCell,
+                    ),
+                    CardTableColumn(
+                      id: 'quantity',
+                      fallbackWidth: 115,
+                      builder: _quantityCell,
+                    ),
+                    CardTableColumn(
+                      id: 'status',
+                      fallbackWidth: 130,
+                      builder: _statusCell,
+                    ),
+                  ],
+                  rowBuilder: _orderCard,
+                ),
+              ),
             ),
           ],
-          rowBuilder: _orderCard,
+        );
+      },
+    );
+  }
+}
+
+class _ResizeControls extends StatelessWidget {
+  final int percent;
+  final double widthFactor;
+  final double minWidthFactor;
+  final double maxWidthFactor;
+  final ValueChanged<double> onChanged;
+
+  const _ResizeControls({
+    required this.percent,
+    required this.widthFactor,
+    required this.minWidthFactor,
+    required this.maxWidthFactor,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFF122330),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.08),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Available card width: $percent%',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Slider(
+              min: minWidthFactor,
+              max: maxWidthFactor,
+              divisions: 70,
+              value: widthFactor,
+              label: '$percent%',
+              onChanged: onChanged,
+            ),
+          ],
         ),
       ),
     );
@@ -93,7 +199,7 @@ Widget _orderCard(BuildContext context, ExampleOrder row, Widget cells) {
       ),
     ),
     child: Padding(
-      padding: EdgeInsets.zero,
+      padding: EdgeInsets.all(8.0),
       child: cells,
     ),
   );

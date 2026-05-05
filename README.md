@@ -3,14 +3,18 @@
 Responsive card-table layout widgets for Flutter with consistently measured cell widths.
 
 This package is meant for UI layouts where you want the visual consistency of a table,
-but the flexibility of cards that wrap naturally on smaller screens.
+but the flexibility of cards that adapt cleanly on smaller screens.
 
 - render each row as your own card, panel, or custom widget
 - keep matching cells aligned across rows by sharing measured widths
-- let cells wrap into multiple runs when horizontal space is limited
+- automatically pack cells into multiple rows when horizontal space is limited
 
 > If you have order cards, profile summaries, marketplace listings, or metric-heavy rows,
 > this package helps them stay visually aligned without forcing a traditional table layout.
+
+## Demo
+
+![Measured Card Table Demo](example/pub_assets/compressed.gif)
 
 ## Features
 
@@ -20,7 +24,7 @@ Build responsive rows from your own data model.
 
 - generic row type
 - custom row/card builder
-- responsive wrapping with configurable spacing
+- automatic multi-row packing based on available width
 - optional `MeasuredCardTableController`
 - resets measurements when the column id set changes
 
@@ -49,7 +53,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  measured_card_table: ^0.0.1
+  measured_card_table: ^0.1.0
 ```
 
 ## Quick start
@@ -95,7 +99,7 @@ class OrdersView extends StatelessWidget {
       rowBuilder: (context, order, cells) {
         return Card(
           child: Padding(
-            padding: EdgeInsets.all(12),
+            padding: const EdgeInsets.all(12),
             child: cells,
           ),
         );
@@ -205,10 +209,16 @@ such as `seller`, `price`, or `status`.
 `fallbackWidth` is used before measured content widths are available. After layout,
 the table grows each column width to fit the widest measured content for that column.
 
-**Wrapping**
+**Layout Behavior**
 
-Cells are placed in a `Wrap`, so narrow layouts naturally move cells onto additional
-runs instead of overflowing horizontally.
+Cells are NOT placed in a `Wrap`.
+
+Instead, columns are:
+- measured
+- assigned consistent widths
+- packed into one or more rows based on available width
+
+This avoids overflow and produces stable, predictable layouts.
 
 **Controller Lifetime**
 
@@ -218,7 +228,7 @@ If you do pass one, you own its lifetime.
 ## When to use this package
 
 - You want card rows with table-like alignment
-- You want responsive wrapping instead of horizontal scrolling
+- You want responsive multi-row layouts instead of horizontal scrolling
 - You want custom row/card layouts
 - You have repeated metric-style cells
 

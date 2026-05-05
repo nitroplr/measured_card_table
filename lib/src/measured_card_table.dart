@@ -6,11 +6,14 @@ import 'package:flutter/widgets.dart';
 import 'card_table_column.dart';
 import 'card_table_controller.dart';
 
-/// Displays rows as custom cards with consistently measured cell widths.
+/// This widget does NOT use Wrap or flexible layout.
 ///
-/// The table measures each column's content, gives matching cells the same
-/// width, and packs cells into explicit horizontal rows. When a row cannot fit
-/// all cells, extra packed rows are generated automatically.
+/// Columns are:
+/// 1. Measured
+/// 2. Assigned fixed widths
+/// 3. Packed into explicit rows
+///
+/// This guarantees no overflow and consistent alignment across rows.
 class MeasuredCardTable<T> extends StatefulWidget {
   /// Rows displayed by the table.
   final List<T> rows;
