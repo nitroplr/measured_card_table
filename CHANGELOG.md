@@ -1,3 +1,7 @@
+## 0.1.1
+
+* Updated tests.
+
 ## 0.1.0
 
 * Reworked layout engine to use explicit row packing instead of wrap-based behavior.

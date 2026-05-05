@@ -73,7 +73,8 @@ class MeasuredCardTable<T> extends StatefulWidget {
 class _MeasuredCardTableState<T> extends State<MeasuredCardTable<T>> {
   late final MeasuredCardTableController _localController;
 
-  MeasuredCardTableController get _controller => widget.controller ?? _localController;
+  MeasuredCardTableController get _controller =>
+      widget.controller ?? _localController;
 
   @override
   void initState() {
@@ -96,7 +97,8 @@ class _MeasuredCardTableState<T> extends State<MeasuredCardTable<T>> {
       newController.addListener(_handleControllerChanged);
     }
 
-    if (!_sameColumnIds(oldWidget.columns, widget.columns) || oldWidget.measurementKey != widget.measurementKey) {
+    if (!_sameColumnIds(oldWidget.columns, widget.columns) ||
+        oldWidget.measurementKey != widget.measurementKey) {
       newController.reset();
     }
   }
@@ -121,7 +123,10 @@ class _MeasuredCardTableState<T> extends State<MeasuredCardTable<T>> {
     }
   }
 
-  bool _sameColumnIds(List<CardTableColumn<T>> oldColumns, List<CardTableColumn<T>> newColumns) {
+  bool _sameColumnIds(
+    List<CardTableColumn<T>> oldColumns,
+    List<CardTableColumn<T>> newColumns,
+  ) {
     if (oldColumns.length != newColumns.length) return false;
 
     for (var i = 0; i < oldColumns.length; i++) {
@@ -197,7 +202,9 @@ class _PackedCells<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final maxWidth = constraints.hasBoundedWidth ? constraints.maxWidth : MediaQuery.sizeOf(context).width;
+        final maxWidth = constraints.hasBoundedWidth
+            ? constraints.maxWidth
+            : MediaQuery.sizeOf(context).width;
 
         final availableWidth = _safeAvailableWidth(maxWidth);
         final packedRows = _packColumns(availableWidth);
@@ -227,7 +234,11 @@ class _PackedCells<T> extends StatelessWidget {
               left: 0,
               top: 0,
               child: IgnorePointer(
-                child: _MeasurementLayer<T>(row: row, columns: columns, controller: controller),
+                child: _MeasurementLayer<T>(
+                  row: row,
+                  columns: columns,
+                  controller: controller,
+                ),
               ),
             ),
           ],
@@ -275,7 +286,9 @@ class _PackedCells<T> extends StatelessWidget {
 
   double _widthFor(CardTableColumn<T> column, double availableWidth) {
     final measuredWidth = controller.widthFor(column.id);
-    final desiredWidth = measuredWidth > 0 ? measuredWidth : column.fallbackWidth;
+    final desiredWidth = measuredWidth > 0
+        ? measuredWidth
+        : column.fallbackWidth;
 
     return desiredWidth.clamp(0, availableWidth).toDouble();
   }
@@ -314,7 +327,9 @@ class _PackedCellRow<T> extends StatelessWidget {
           row: row,
           column: column,
           width: _widthFor(column),
-          alignmentOverride: columns.length == 1 ? AlignmentDirectional.centerStart : null,
+          alignmentOverride: columns.length == 1
+              ? AlignmentDirectional.centerStart
+              : null,
         ),
       );
 
@@ -323,7 +338,9 @@ class _PackedCellRow<T> extends StatelessWidget {
       }
     }
 
-    final resolvedMainAxisAlignment = columns.length == 1 ? MainAxisAlignment.start : mainAxisAlignment;
+    final resolvedMainAxisAlignment = columns.length == 1
+        ? MainAxisAlignment.start
+        : mainAxisAlignment;
 
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: availableWidth),
@@ -337,7 +354,9 @@ class _PackedCellRow<T> extends StatelessWidget {
 
   double _widthFor(CardTableColumn<T> column) {
     final measuredWidth = controller.widthFor(column.id);
-    final desiredWidth = measuredWidth > 0 ? measuredWidth : column.fallbackWidth;
+    final desiredWidth = measuredWidth > 0
+        ? measuredWidth
+        : column.fallbackWidth;
 
     return desiredWidth.clamp(0, availableWidth).toDouble();
   }
@@ -349,13 +368,21 @@ class _VisibleCell<T> extends StatelessWidget {
   final double width;
   final AlignmentGeometry? alignmentOverride;
 
-  const _VisibleCell({required this.row, required this.column, required this.width, this.alignmentOverride});
+  const _VisibleCell({
+    required this.row,
+    required this.column,
+    required this.width,
+    this.alignmentOverride,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: width,
-      child: Align(alignment: alignmentOverride ?? column.alignment, child: column.builder(context, row)),
+      child: Align(
+        alignment: alignmentOverride ?? column.alignment,
+        child: column.builder(context, row),
+      ),
     );
   }
 }
@@ -365,7 +392,11 @@ class _MeasurementLayer<T> extends StatelessWidget {
   final List<CardTableColumn<T>> columns;
   final MeasuredCardTableController controller;
 
-  const _MeasurementLayer({required this.row, required this.columns, required this.controller});
+  const _MeasurementLayer({
+    required this.row,
+    required this.columns,
+    required this.controller,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -398,7 +429,10 @@ class _MeasureSize extends SingleChildRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(BuildContext context, covariant _RenderMeasureSize renderObject) {
+  void updateRenderObject(
+    BuildContext context,
+    covariant _RenderMeasureSize renderObject,
+  ) {
     renderObject.onChange = onChange;
   }
 }
@@ -416,7 +450,10 @@ class _RenderMeasureSize extends RenderProxyBox {
     final child = this.child;
     if (child == null) return;
 
-    final measuredSize = Size(child.size.width.ceilToDouble(), child.size.height.ceilToDouble());
+    final measuredSize = Size(
+      child.size.width.ceilToDouble(),
+      child.size.height.ceilToDouble(),
+    );
 
     if (_lastReportedSize == measuredSize) return;
     _lastReportedSize = measuredSize;
