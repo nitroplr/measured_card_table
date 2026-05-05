@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-/// Defines one column displayed by a measured card table.
+/// Defines one logical column displayed by a measured card table.
 class CardTableColumn<T> {
   /// Unique, stable identifier used to store this column's measured width.
   final String id;
@@ -12,6 +12,9 @@ class CardTableColumn<T> {
   final AlignmentGeometry alignment;
 
   /// Builds this column's cell for the provided row.
+  ///
+  /// Do not return [Expanded], [Flexible], or other widgets that require a
+  /// flex parent. The table controls cell width.
   final Widget Function(BuildContext context, T row) builder;
 
   /// Creates a measured card table column.

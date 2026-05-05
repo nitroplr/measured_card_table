@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 
 /// Stores and shares measured column widths.
 class MeasuredCardTableController extends ChangeNotifier {
-  static const double _measurementPadding = 6;
+  static const double _measurementPadding = 2;
 
   final Map<String, double> _widths = <String, double>{};
 
@@ -17,6 +17,9 @@ class MeasuredCardTableController extends ChangeNotifier {
   /// Returns zero when the column has not been measured yet.
   double widthFor(String columnId) => _widths[columnId] ?? 0;
 
+  /// Whether at least one column has a measured width.
+  bool get hasMeasurements => _widths.isNotEmpty;
+
   /// Stores a measured width for a column.
   ///
   /// Widths only increase until [reset] is called.
@@ -27,8 +30,8 @@ class MeasuredCardTableController extends ChangeNotifier {
       return;
     }
 
-    final double next = width.ceilToDouble() + _measurementPadding;
-    final double current = _widths[columnId] ?? 0;
+    final next = width.ceilToDouble() + _measurementPadding;
+    final current = _widths[columnId] ?? 0;
 
     if (next <= current) return;
 
