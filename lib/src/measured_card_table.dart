@@ -306,7 +306,14 @@ class _PackedCellRow<T> extends StatelessWidget {
     for (var i = 0; i < columns.length; i++) {
       final column = columns[i];
 
-      children.add(_VisibleCell<T>(row: row, column: column, width: _widthFor(column)));
+      children.add(
+        _VisibleCell<T>(
+          row: row,
+          column: column,
+          width: _widthFor(column),
+          alignmentOverride: columns.length == 1 ? Alignment.centerLeft : null,
+        ),
+      );
 
       if (usesFixedGap && i != columns.length - 1) {
         children.add(SizedBox(width: gap));
@@ -331,14 +338,15 @@ class _VisibleCell<T> extends StatelessWidget {
   final T row;
   final CardTableColumn<T> column;
   final double width;
+  final Alignment? alignmentOverride;
 
-  const _VisibleCell({required this.row, required this.column, required this.width});
+  const _VisibleCell({required this.row, required this.column, required this.width, this.alignmentOverride});
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: width,
-      child: Align(alignment: column.alignment, child: column.builder(context, row)),
+      child: Align(alignment: alignmentOverride ?? column.alignment, child: column.builder(context, row)),
     );
   }
 }
